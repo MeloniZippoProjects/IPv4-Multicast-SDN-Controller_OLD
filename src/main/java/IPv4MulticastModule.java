@@ -8,9 +8,7 @@ import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.util.FlowModUtils;
 import org.apache.commons.net.util.SubnetUtils;
-import org.projectfloodlight.openflow.protocol.OFFlowAdd;
-import org.projectfloodlight.openflow.protocol.OFMessage;
-import org.projectfloodlight.openflow.protocol.OFType;
+import org.projectfloodlight.openflow.protocol.*;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.action.OFActionSetField;
 import org.projectfloodlight.openflow.protocol.action.OFActions;
@@ -87,15 +85,24 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
                 matchBuilder.setExact(MatchField.ETH_TYPE, EthType.IPv4)
                         .setExact(MatchField.IPV4_DST, destinationAddress);
 
-                //get available actions
-                OFActions actions = iofSwitch.getOFFactory().actions();
-                ArrayList<OFAction> actionList = new ArrayList<OFAction>();
 
+                ArrayList<OFGroupMod> groupMods = new ArrayList<OFGroupMod>();
+
+                OFGroupAdd multicastActionGroup = iofSwitch.getOFFactory().buildGroupAdd()
+                        .setGroup(OFGroup.of(1))    //todo: is it an id? make them unique to avoid overwriting?
+                        .setGroupType(OFGroupType.ALL)
+                        .build();
+
+                List<OFBucket> buckets = multicastActionGroup.getBuckets();
+
+                //get available action types
+                OFActions actions = iofSwitch.getOFFactory().actions();
                 //Open Flow extendable matches, needed to create actions
                 OFOxms oxms = iofSwitch.getOFFactory().oxms();
-                //create action for each host and add to list
+
                 for(String host : hosts)
                 {
+                    ArrayList<OFAction> actionList = new ArrayList<OFAction>();
                     OFActionSetField forwardAction = actions.buildSetField()
                             .setField(
                                     oxms.buildIpv4Dst()
@@ -103,12 +110,17 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
                                             .build()
                             ).build();
                     actionList.add(forwardAction);
+
+                    OFBucket inoltraPacchetto = iofSwitch.getOFFactory().buildBucket()
+                            .setActions(actionList)
+                            .setWatchGroup(OFGroup.ANY)
+                            .setWatchPort(OFPort.ANY)
+                            .build();
+
+                    buckets.add(inoltraPacchetto);
                 }
 
-                flowModBuilder.setActions(actionList);
-                flowModBuilder.setMatch(matchBuilder.build());
-
-                iofSwitch.write(flowModBuilder.build());
+                iofSwitch.write(multicastActionGroup);
             }
         }
 
