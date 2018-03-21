@@ -1,3 +1,4 @@
 [submodule "floodlight"]
 	path = floodlight
 	url = git@github.com:floodlight/floodlight.git
+	ignore = all
