@@ -11,8 +11,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: org.projectfloodlight:floodlight:1.2" level="project" />
-    <orderEntry type="library" name="Maven: com.google.guava:guava:13.0.1" level="project" />
+    <orderEntry type="module" module-name="floodlight" />
+    <orderEntry type="library" name="Maven: com.google.guava:guava:20.0" level="project" />
     <orderEntry type="library" name="Maven: ch.qos.logback:logback-classic:1.0.0" level="project" />
     <orderEntry type="library" name="Maven: ch.qos.logback:logback-core:1.0.0" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.6.4" level="project" />
@@ -53,7 +53,7 @@
     <orderEntry type="library" name="Maven: org.hamcrest:hamcrest-core:1.3" level="project" />
     <orderEntry type="library" name="Maven: org.hamcrest:hamcrest-integration:1.3" level="project" />
     <orderEntry type="library" name="Maven: org.hamcrest:hamcrest-library:1.3" level="project" />
-    <orderEntry type="library" name="Maven: org.projectfloodlight:openflowj:2.0.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: org.projectfloodlight:openflowj:3.3.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: io.netty:netty-all:4.0.31.Final" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.4.4" level="project" />
     <orderEntry type="library" name="Maven: commons-net:commons-net:3.3" level="project" />

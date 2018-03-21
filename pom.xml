@@ -6,13 +6,13 @@
 
     <groupId>org.melonizippo</groupId>
     <artifactId>ipv4-multicast-sdn-controller</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0-SNAPSHOzT</version>
 
     <dependencies>
         <dependency>
             <groupId>org.projectfloodlight</groupId>
             <artifactId>floodlight</artifactId>
-            <version>1.2</version>
+            <version>1.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-net</groupId>
