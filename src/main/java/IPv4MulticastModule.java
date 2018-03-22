@@ -106,9 +106,14 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
 
     private void createNewOFGroup(IOFSwitch iofSwitch, String multicastAddress) {
         Set<String> hosts = multicastGroups.get(multicastAddress);
+        int groupId;
+        if(!OFGroupsIds.isEmpty())
+             groupId = Collections.max(OFGroupsIds.values()) + 1;
+        else
+            groupId = 1;
 
         OFGroupAdd multicastActionGroup = iofSwitch.getOFFactory().buildGroupAdd()
-                .setGroup(OFGroup.of(1))    //todo: is it an id? make them unique to avoid overwriting?
+                .setGroup(OFGroup.of(groupId))    //todo: is it an id? make them unique to avoid overwriting?
                 .setGroupType(OFGroupType.ALL)
                 .build();
 
