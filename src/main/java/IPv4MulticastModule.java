@@ -30,6 +30,7 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
     protected SubnetUtils multicastPool;
 
     protected Map<String, Set<String>> multicastGroups;
+    protected Map<String, Integer> OFGroupsIds;
 
     // Rule timeouts
     private static short IDLE_TIMEOUT = 10; // in seconds
@@ -71,7 +72,11 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
             //if set contains the dest address, it is a valid multicast group
             if(getGroupsSet().contains(destinationAddress.toString()))
             {
-                Set<String> hosts = multicastGroups.get(destinationAddress.toString());
+                if(!OFGroupsIds.containsKey(destinationAddress.toString()))
+                    createNewOFGroup(iofSwitch, destinationAddress.toString());
+
+                //get available action types
+                OFActions actions = iofSwitch.getOFFactory().actions();
 
                 //create flow-mod for this packet in
                 OFFlowAdd.Builder flowModBuilder = iofSwitch.getOFFactory().buildFlowAdd();
@@ -82,51 +87,66 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
                 flowModBuilder.setCookie(U64.of(0));
                 flowModBuilder.setPriority(FlowModUtils.PRIORITY_MAX);
 
+                ArrayList<OFAction> actionList = new ArrayList<OFAction>();
+                int groupId = OFGroupsIds.get(destinationAddress.toString());
+                actionList.add(actions.buildGroup().setGroup(OFGroup.of(groupId)).build());
+
+                flowModBuilder.setActions(actionList);
+
                 //create matcher for this multicast ip
                 Match.Builder matchBuilder = iofSwitch.getOFFactory().buildMatch();
                 matchBuilder.setExact(MatchField.ETH_TYPE, EthType.IPv4)
                         .setExact(MatchField.IPV4_DST, destinationAddress);
 
-
-                ArrayList<OFGroupMod> groupMods = new ArrayList<OFGroupMod>();
-
-                OFGroupAdd multicastActionGroup = iofSwitch.getOFFactory().buildGroupAdd()
-                        .setGroup(OFGroup.of(1))    //todo: is it an id? make them unique to avoid overwriting?
-                        .setGroupType(OFGroupType.ALL)
-                        .build();
-
-                List<OFBucket> buckets = multicastActionGroup.getBuckets();
-
-                //get available action types
-                OFActions actions = iofSwitch.getOFFactory().actions();
-                //Open Flow extendable matches, needed to create actions
-                OFOxms oxms = iofSwitch.getOFFactory().oxms();
-
-                for(String host : hosts)
-                {
-                    ArrayList<OFAction> actionList = new ArrayList<OFAction>();
-                    OFActionSetField forwardAction = actions.buildSetField()
-                            .setField(
-                                    oxms.buildIpv4Dst()
-                                            .setValue(IPv4Address.of(host))
-                                            .build()
-                            ).build();
-                    actionList.add(forwardAction);
-
-                    OFBucket inoltraPacchetto = iofSwitch.getOFFactory().buildBucket()
-                            .setActions(actionList)
-                            .setWatchGroup(OFGroup.ANY)
-                            .setWatchPort(OFPort.ANY)
-                            .build();
-
-                    buckets.add(inoltraPacchetto);
-                }
-
-                iofSwitch.write(multicastActionGroup);
+                flowModBuilder.setMatch(matchBuilder.build());
+                iofSwitch.write(flowModBuilder.build());
             }
         }
 
         return Command.CONTINUE;
+    }
+
+    private void createNewOFGroup(IOFSwitch iofSwitch, String multicastAddress) {
+        Set<String> hosts = multicastGroups.get(multicastAddress);
+        int groupId;
+        if(!OFGroupsIds.isEmpty())
+             groupId = Collections.max(OFGroupsIds.values()) + 1;
+        else
+            groupId = 1;
+
+        OFGroupAdd multicastActionGroup = iofSwitch.getOFFactory().buildGroupAdd()
+                .setGroup(OFGroup.of(groupId))    //todo: is it an id? make them unique to avoid overwriting?
+                .setGroupType(OFGroupType.ALL)
+                .build();
+
+        List<OFBucket> buckets = multicastActionGroup.getBuckets();
+
+        //get available action types
+        OFActions actions = iofSwitch.getOFFactory().actions();
+        //Open Flow extendable matches, needed to create actions
+        OFOxms oxms = iofSwitch.getOFFactory().oxms();
+
+        for(String host : hosts)
+        {
+            ArrayList<OFAction> actionList = new ArrayList<OFAction>();
+            OFActionSetField forwardAction = actions.buildSetField()
+                    .setField(
+                            oxms.buildIpv4Dst()
+                                    .setValue(IPv4Address.of(host))
+                                    .build()
+                    ).build();
+            actionList.add(forwardAction);
+
+            OFBucket forwardPacket = iofSwitch.getOFFactory().buildBucket()
+                    .setActions(actionList)
+                    .setWatchGroup(OFGroup.ANY)
+                    .setWatchPort(OFPort.ANY)
+                    .build();
+
+            buckets.add(forwardPacket);
+        }
+
+        iofSwitch.write(multicastActionGroup);
     }
 
     public String getName() {
