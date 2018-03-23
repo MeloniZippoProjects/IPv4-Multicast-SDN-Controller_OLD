@@ -24,6 +24,8 @@ import java.util.*;
 public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModule {
 
     protected IFloodlightProviderService floodlightProvider;
+    protected IRestApiService restApiService;
+
     protected SubnetUtils unicastPool;
     protected SubnetUtils multicastPool;
 
@@ -157,6 +159,7 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
 
     public void init(FloodlightModuleContext floodlightModuleContext) throws FloodlightModuleException {
         floodlightProvider = floodlightModuleContext.getServiceImpl(IFloodlightProviderService.class);
+        restApiService = floodlightModuleContext.getServiceImpl(IRestApiService.class);
 
         //todo: maybe change it in a configuration file
         unicastPool = new SubnetUtils("192.168.0.0/24");
