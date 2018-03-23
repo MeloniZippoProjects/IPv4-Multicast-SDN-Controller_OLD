@@ -18,8 +18,14 @@ public class MulticastGroupsResource extends ServerResource {
     //todo: parameters and return values are placeholders
 
     @Post("create")
-    public String Create()
+    public String Create(String fmJson)
     {
+        IIPv4MulticastModule multicastModule =
+                (IIPv4MulticastModule)getContext().getAttributes().
+                        get(IIPv4MulticastModule.class.getCanonicalName());
+
+
+
         return "";
     }
 
@@ -46,36 +52,6 @@ public class MulticastGroupsResource extends ServerResource {
     public String List()
     {
         return "";
-    }
-}
-
-//This is an EXAMPLE
-public class ListStaticEntriesResource extends ServerResource {
-    protected static Logger log = LoggerFactory.getLogger(ListStaticEntriesResource.class);
-
-    @Get("json")
-    public SFPEntryMap ListStaticFlowEntries() {
-        IStaticEntryPusherService sfpService =
-                (IStaticEntryPusherService)getContext().getAttributes().
-                        get(IStaticEntryPusherService.class.getCanonicalName());
-
-        String param = (String) getRequestAttributes().get("switch");
-        if (log.isDebugEnabled())
-            log.debug("Listing all static flow/group entires for switch: " + param);
-
-        if (param.toLowerCase().equals("all")) {
-            return new SFPEntryMap(sfpService.getEntries());
-        } else {
-            try {
-                Map<String, Map<String, OFMessage>> retMap = new HashMap<String, Map<String, OFMessage>>();
-                retMap.put(param, sfpService.getEntries(DatapathId.of(param)));
-                return new SFPEntryMap(retMap);
-
-            } catch (NumberFormatException e){
-                setStatus(Status.CLIENT_ERROR_BAD_REQUEST, ControllerSwitchesResource.DPID_ERROR);
-            }
-        }
-        return null;
     }
 }
 

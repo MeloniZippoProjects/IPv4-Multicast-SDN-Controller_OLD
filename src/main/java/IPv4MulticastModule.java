@@ -21,7 +21,7 @@ import java.util.*;
 
 
 
-public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModule {
+public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModule, IIPv4MulticastModule {
 
     protected IFloodlightProviderService floodlightProvider;
     protected IRestApiService restApiService;
@@ -36,17 +36,17 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
     private static short IDLE_TIMEOUT = 10; // in seconds
     private static short HARD_TIMEOUT = 20; // every 20 seconds drop the entry
 
-    protected Set<String> getGroupsSet() {
+    public Set<String> getGroupsSet() {
         return multicastGroups.keySet();
     }
 
-    protected void addGroup(String group)
+    public void addGroup(String group)
     {
         if(!multicastGroups.containsKey(group))
             multicastGroups.put(group, new HashSet<String>());
     }
 
-    protected void addToGroup(String group, String host)
+    public void addToGroup(String group, String host)
     {
         if(multicastGroups.containsKey(group)) {
             multicastGroups.get(group).add(host);
