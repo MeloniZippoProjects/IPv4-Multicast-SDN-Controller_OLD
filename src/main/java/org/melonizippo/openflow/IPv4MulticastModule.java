@@ -1,3 +1,5 @@
+package org.melonizippo.openflow;
+
 import net.floodlightcontroller.core.*;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
@@ -8,6 +10,9 @@ import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.util.FlowModUtils;
 import org.apache.commons.net.util.SubnetUtils;
+import org.melonizippo.exceptions.GroupAlreadyExistsException;
+import org.melonizippo.exceptions.GroupNotFoundException;
+import org.melonizippo.rest.MulticastWebRoutable;
 import org.projectfloodlight.openflow.protocol.*;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.action.OFActionSetField;
@@ -40,21 +45,39 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
         return multicastGroups.keySet();
     }
 
-    public void addGroup(String group)
+
+    //todo: add all validation of ip addresses
+
+    public void addGroup(String group) throws GroupAlreadyExistsException
     {
         if(!multicastGroups.containsKey(group))
             multicastGroups.put(group, new HashSet<String>());
+        else
+            throw new GroupAlreadyExistsException();
     }
 
-    public void addToGroup(String group, String host)
+    public void deleteGroup(String group) throws GroupNotFoundException {
+        if(multicastGroups.containsKey(group))
+            multicastGroups.remove(group);
+        else
+            throw new GroupNotFoundException();
+    }
+
+    public void addToGroup(String group, String host) throws GroupNotFoundException
     {
         if(multicastGroups.containsKey(group)) {
             multicastGroups.get(group).add(host);
         }
         else
-        {
-            //todo: exception?
-        }
+            throw new GroupNotFoundException();
+    }
+
+    public void removeFromGroup(String group, String host) throws GroupNotFoundException
+    {
+        if(multicastGroups.containsKey(group))
+            multicastGroups.get(group).add(host);
+        else
+            throw new GroupNotFoundException();
     }
 
     public Command receive(IOFSwitch iofSwitch, OFMessage ofMessage, FloodlightContext floodlightContext) {
@@ -150,7 +173,7 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
     }
 
     public String getName() {
-        return "IPv4 Multicast Module";
+        return "IPv4MulticastModule";
     }
 
     public boolean isCallbackOrderingPrereq(OFType ofType, String s) {
@@ -184,9 +207,11 @@ public class IPv4MulticastModule implements IOFMessageListener, IFloodlightModul
         //todo: maybe change it in a configuration file
         unicastPool = new SubnetUtils("192.168.0.0/24");
         multicastPool = new SubnetUtils("192.168.1.0/28");
+        multicastGroups = new HashMap<String, Set<String>>();
     }
 
     public void startUp(FloodlightModuleContext floodlightModuleContext) throws FloodlightModuleException {
-
+        floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
+        restApiService.addRestletRoutable(new MulticastWebRoutable());
     }
 }
